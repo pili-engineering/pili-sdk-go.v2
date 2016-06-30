@@ -1,7 +1,7 @@
 package main
 
 import (
-	"../pili" // or "github.com/pili-engineering/pili-sdk-go/pili"
+	"../pili" // or "github.com/pili-engineering/pili-sdk-go.v2/pili"
 	"fmt"
 )
 

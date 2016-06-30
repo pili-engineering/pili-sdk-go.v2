@@ -1,4 +1,4 @@
-# Pili Streaming Cloud server-side library for Golang
+# Pili Streaming Cloud Server-Side Library For Go
 
 ## Features
 
@@ -66,7 +66,7 @@ $ go get github.com/pili-engineering/pili-sdk-go/pili
 package main
 
 import (
-    "github.com/pili-engineering/pili-sdk-go/pili"
+    "github.com/pili-engineering/pili-sdk-go.v2/pili"
     "fmt"
     // ...
 )
@@ -494,7 +494,8 @@ fmt.Println("Stream Deleted:\n", deleteResult)
 ```
 
 ## History
-
+- 2.0.0
+    - Update to New API
 - 1.5.3
     - Add UserPipeline in SaveAs
 - 1.5.2
