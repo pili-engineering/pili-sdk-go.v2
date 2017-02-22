@@ -27,6 +27,7 @@ func TestHub(t *testing.T) {
 
 	// Get keyA, success.
 	info, err := streamA.Info()
+	require.NoError(t, err)
 	require.True(t, checkStream(info, testHub, keyA, false))
 
 	// Stream and Get keyA
@@ -79,4 +80,22 @@ func TestHub(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, keys, []string{})
 	require.Equal(t, marker, "")
+}
+
+// 这个测试case需要保持推流(test1)
+func TestBatchLive(t *testing.T) {
+
+	if skipTest() {
+		t.SkipNow()
+	}
+	client := New(&MAC{testAccessKey, []byte(testSecretKey)}, nil)
+	hub := client.Hub(testHub)
+
+	items, err := hub.BatchLiveStatus([]string{"test1", "test2"})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(items))
+	require.Equal(t, "test1", items[0].Key)
+	require.True(t, items[0].StartAt > 0)
+	require.True(t, items[0].BPS > 0)
+	require.True(t, items[0].FPS.Audio > 0)
 }

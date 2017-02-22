@@ -51,7 +51,7 @@ func HDLPlayURL(domain, hub, streamKey string) string {
 	return fmt.Sprintf("http://%s/%s/%s.flv", domain, hub, streamKey)
 }
 
-// SnapshotPlayURL 生成截图直播地址.
+// SnapshotPlayURL 生成直播封面地址.
 func SnapshotPlayURL(domain, hub, streamKey string) string {
 	return fmt.Sprintf("http://%s/%s/%s.jpg", domain, hub, streamKey)
 }
