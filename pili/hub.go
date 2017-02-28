@@ -1,6 +1,12 @@
 package pili
 
-import "fmt"
+import (
+	"fmt"
+	"path"
+	"strings"
+)
+
+type M map[string]interface{}
 
 // Hub 表示一个 Hub 对象.
 type Hub struct {
@@ -23,8 +29,7 @@ type createArgs struct {
 // 一般情况下不需要调用这个 API, 除非是想提前对这一个流做一些特殊配置.
 func (h *Hub) Create(streamKey string) (stream *Stream, err error) {
 	args := &createArgs{streamKey}
-	path := h.baseURL + "/streams"
-	err = h.client.CallWithJSON(nil, "POST", path, args)
+	err = h.client.CallWithJSON(nil, "POST", h.url("streams"), args)
 	if err != nil {
 		return
 	}
@@ -37,6 +42,29 @@ func (h *Hub) Stream(key string) *Stream {
 	return newStream(h.hub, key, h.client)
 }
 
+type LiveStatusWithKey struct {
+	Key string `json:"key"`
+	LiveStatus
+}
+
+// BatchLiveStatus 批量查询流直播信息.
+// streamKeys 流名数组, 最大长度为100.
+// 如果流不存在或不在直播, 则不会出现在返回结果里.
+func (h *Hub) BatchLiveStatus(streamTitles []string) ([]LiveStatusWithKey, error) {
+	var ret struct {
+		Items []LiveStatusWithKey `json:"items"`
+	}
+	err := h.client.CallWithJSON(&ret, "POST", h.url("livestreams"), M{"items": streamTitles})
+	if err != nil {
+		return nil, err
+	}
+	return ret.Items, nil
+}
+
+func (h *Hub) url(p ...string) string {
+	return joinPath(h.baseURL, p...)
+}
+
 // ---------------------------------------------------------------------------------------
 
 type listItem struct {
@@ -45,7 +73,7 @@ type listItem struct {
 
 func (h *Hub) list(live bool, prefix string, limit int, marker string) (keys []string, omarker string, err error) {
 
-	path := fmt.Sprintf("%s/streams?liveonly=%v&prefix=%s&limit=%d&marker=%s", h.baseURL, live, prefix, limit, marker)
+	path := fmt.Sprintf("%s?liveonly=%v&prefix=%s&limit=%d&marker=%s", h.url("streams"), live, prefix, limit, marker)
 	var ret struct {
 		Items  []listItem `json:"items"`
 		Marker string     `json:"marker"`
@@ -116,16 +144,19 @@ func (h *Hub) ListLive(prefix string, limit int, marker string) (keys []string, 
 	return h.list(true, prefix, limit, marker)
 }
 
+func joinPath(base string, p ...string) string {
+	ret := base + "/" + path.Join(p...)
+	return strings.TrimSuffix(ret, "/")
+}
+
 // -----------------------------------------------------------------------------
 
 // IsExists 判断一个 error 是否表示资源存在.
 func IsExists(err error) bool {
-	e, ok := err.(*Error)
-	return ok && e.Code == 614
+	return DetectErrorCode(err) == 614
 }
 
 // IsNotExists 判断一个 error 是否表示资源不存在.
 func IsNotExists(err error) bool {
-	e, ok := err.(*Error)
-	return ok && e.Code == 612
+	return DetectErrorCode(err) == 612
 }

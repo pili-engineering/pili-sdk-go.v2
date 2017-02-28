@@ -7,18 +7,22 @@
 	- [x] RTMP直播地址: RTMPPlayURL(domain, hub, streamKey)
 	- [x] HLS直播地址: HLSPlayURL(domain, hub, streamKey)
 	- [x] HDL直播地址: HDLPlayURL(domain, hub, streamKey)
-	- [x] 截图直播地址: SnapshotPlayURL(domain, hub, streamKey)
+	- [x] 直播封面地址: SnapshotPlayURL(domain, hub, streamKey)
 - Hub
 	- [x] 创建流: hub.Create(streamKey)
 	- [x] 获得流: hub.Stream(streamKey)
 	- [x] 列出流: hub.List(prefix, limit, marker)
 	- [x] 列出正在直播的流: hub.ListLive(prefix, limit, marker)
+	- [x] 批量查询直播信息: hub.BatchLiveStatus(streams)
+
 - Stream
 	- [x] 流信息: stream.Info()
-	- [x] 禁用流: stream.Disable()
+	- [x] 禁用流: stream.DisableTill(till)
 	- [x] 启用流: stream.Enable()
  	- [x] 查询直播状态: stream.LiveStatus()
-	- [x] 保存直播回放: stream.Save(start, end)
+	- [x] 保存直播回放: stream.Saveas(options)
+	- [x] 保存直播截图: stream.Snapshot(options)
+	- [x] 更改流的实时转码规格: stream.UpdateConverts(profiles)
 	- [x] 查询直播历史: stream.HistoryActivity(start, end)
 
 ## Contents
@@ -38,6 +42,7 @@
 		- [Get a Stream](#get-a-stream)
 		- [List Streams](#list-streams)
 		- [List live Streams](#list-live-streams)
+		- [Batch query live Status](#batch-query-live-status)
 	- [Stream](#stream)
 		- [Get Stream info](#get-stream-info)
 		- [Disable a Stream](#disable-a-stream)
@@ -45,6 +50,8 @@
 		- [Get Stream live status](#get-stream-live-status)
 		- [Get Stream history activity](#get-stream-history-activity)
 		- [Save Stream live playback](#save-stream-live-playback)
+		- [Update Stream converts](#update-stream-converts)
+		- [Save Stream snapshot](#save-stream-snapshot)
 
 ## Installation
 
@@ -203,6 +210,18 @@ keys=[streamkey] marker=
 */
 ```
 
+#### Batch query live status
+```go
+items, err := hub.BatchLiveStatus(streams)
+if err != nil {
+	return
+}
+fmt.Println(items)
+/*
+[{streamKey1 {1487766696 172.21.2.14:63422 1042240 {46 24 0}}} {streamKey2 {1487768638 172.21.2.14:63793 1201352 {51 22 0}}}]
+*/
+```
+
 ### Stream
 
 #### Get Stream info
@@ -229,7 +248,7 @@ if err != nil {
 }
 fmt.Println("before disable:", info)
 
-err = stream.Disable()
+err = stream.DisableTill(time.Now().Add(time.Minute).Unix())
 if err != nil {
 	return
 }
@@ -238,11 +257,22 @@ info, err = stream.Info()
 if err != nil {
 	return
 }
-fmt.Println("after disable:", info)
+fmt.Println("after call disable:", info)
+
+time.Sleep(time.Minute)
+
+info, err = stream.Info()
+if err != nil {
+    return
+}
+fmt.Println("after time.Minute:", info)
+
 /*
-before disable: {hub:PiliSDKTest,key:streamkey,disabled:false}
-after disable: {hub:PiliSDKTest,key:streamkey,disabled:true}
+before disable: {hub:PiliSDKTest,key:sdkexample1487765261435788231A,disabled:false}
+after call disable: {hub:PiliSDKTest,key:sdkexample1487765261435788231A,disabled:true}
+after time.Minute: {hub:PiliSDKTest,key:sdkexample1487765261435788231A,disabled:false}
 */
+
 ```
 
 #### Enable a Stream
@@ -303,12 +333,54 @@ fmt.Println(records)
 
 ```go
 stream := hub.Stream(key)
-fname, err := stream.Save(0, 0)
+opts := &pili.SaveasOptions{
+	Format: "mp4",
+}
+fname, persistentID, err := stream.Saveas(opts)
+if err != nil {
+	return
+}
+fmt.Println(fname, persistentID)
+/*
+recordings/z1.PiliSDKTest.streamkey/1463156847_1463157463.mp4 z1.58ae57dc254f0e4d3f00000e
+*/
+```
+
+### Update Stream converts
+```go
+stream := hub.Stream(key)
+info, err := stream.Info()
+if err != nil {
+	return
+}
+fmt.Println("before UpdateConverts:", info)
+err = stream.UpdateConverts([]string{"480p", "720p"})
+if err != nil {
+	return
+}
+info, err = stream.Info()
+if err != nil {
+	return
+}
+fmt.Println("after UpdateConverts:", info)
+/*
+before UpdateConverts: {hub:PiliSDKTest,key:sdkexample1487834862156173949A,disabled:false,converts:[]}
+after UpdateConverts: {hub:PiliSDKTest,key:sdkexample1487834862156173949A,disabled:false,converts:[480p 720p]}
+*/
+```
+
+#### Save Stream snapshot
+```go
+stream := hub.Stream(key)
+opts := &pili.SnapshotOptions{
+	Format: "jpg",
+}
+fname, err := stream.Snapshot(opts)
 if err != nil {
 	return
 }
 fmt.Println(fname)
 /*
-recordings/z1.PiliSDKTest.streamkey/1463156847_1463157463.m3u8
+streamkey-2741961933532577110.jpg
 */
 ```

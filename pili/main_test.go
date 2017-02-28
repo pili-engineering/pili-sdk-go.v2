@@ -1,6 +1,8 @@
 package pili
 
 import (
+	"log"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -12,17 +14,27 @@ import (
 var (
 	testAccessKey    = ""
 	testSecretKey    = ""
-	testHub          = ""
+	testHub          = "PiliSDKTest"
 	testStreamPrefix = "sdktest" + strconv.FormatInt(time.Now().UnixNano(), 10)
 )
 
-// Local test environment
-// func init() {
-// 	testAccessKey = "7O7hf7Ld1RrC_fpZdFvU8aCgOPuhw2K4eapYOdII"
-// 	testSecretKey = "6Rq7rMSUHHqOgo0DJjh15tHsGUBEH9QhWqqyj4ka"
-// 	testHub = "PiliSDKTest"
-// 	APIHost = "10.200.20.28:7778"
-// }
+func init() {
+	if v := os.Getenv("QINIU_ACCESS_KEY"); v != "" {
+		testAccessKey = v
+	}
+
+	if v := os.Getenv("QINIU_SECRET_KEY"); v != "" {
+		testSecretKey = v
+	}
+
+	if testAccessKey == "" || testSecretKey == "" {
+		log.Fatal("need set access key and secret key")
+	}
+
+	if v := os.Getenv("PILI_API_HOST"); v != "" {
+		APIHost = v
+	}
+}
 
 func skipTest() bool {
 	return testAccessKey == "" || testSecretKey == "" || testHub == ""

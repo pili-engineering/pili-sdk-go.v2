@@ -11,14 +11,27 @@ import (
 )
 
 var (
-	AccessKey = "<QINIU ACCESS KEY>" // 替换成自己 Qiniu 账号的 AccessKey.
-	SecretKey = "<QINIU SECRET KEY>" // 替换成自己 Qiniu 账号的 SecretKey.
-	HubName   = "<PILI HUB NAME>"    // Hub 必须事先存在.
+	AccessKey = ""            // Qiniu 账号的 AccessKey.
+	SecretKey = ""            // Qiniu 账号的 SecretKey.
+	HubName   = "PiliSDKTest" // Hub 必须事先存在.
 )
 
 func init() {
-	AccessKey = os.Getenv("PILI_ACCESS_KEY")
-	SecretKey = os.Getenv("PILI_SECRET_KEY")
+	if v := os.Getenv("QINIU_ACCESS_KEY"); v != "" {
+		AccessKey = v
+	}
+
+	if v := os.Getenv("QINIU_SECRET_KEY"); v != "" {
+		SecretKey = v
+	}
+
+	if AccessKey == "" || SecretKey == "" {
+		log.Fatal("need set access key and secret key")
+	}
+
+	if v := os.Getenv("PILI_API_HOST"); v != "" {
+		pili.APIHost = v
+	}
 }
 
 func createStream(hub *pili.Hub, key string) {
@@ -58,6 +71,32 @@ func listLiveStreams(hub *pili.Hub, prefix string) {
 	fmt.Printf("keys=%v marker=%v\n", keys, marker)
 }
 
+func batchQueryLiveStreams(hub *pili.Hub, streams []string) {
+	items, err := hub.BatchLiveStatus(streams)
+	if err != nil {
+		return
+	}
+	fmt.Println(items)
+}
+
+func updateStreamConverts(hub *pili.Hub, key string) {
+	stream := hub.Stream(key)
+	info, err := stream.Info()
+	if err != nil {
+		return
+	}
+	fmt.Println("before UpdateConverts:", info)
+	err = stream.UpdateConverts([]string{"480p", "720p"})
+	if err != nil {
+		return
+	}
+	info, err = stream.Info()
+	if err != nil {
+		return
+	}
+	fmt.Println("after UpdateConverts:", info)
+}
+
 func disableStream(hub *pili.Hub, key string) {
 	stream := hub.Stream(key)
 	info, err := stream.Info()
@@ -66,7 +105,7 @@ func disableStream(hub *pili.Hub, key string) {
 	}
 	fmt.Println("before disable:", info)
 
-	err = stream.Disable()
+	err = stream.DisableTill(time.Now().Add(time.Minute).Unix())
 	if err != nil {
 		return
 	}
@@ -75,7 +114,15 @@ func disableStream(hub *pili.Hub, key string) {
 	if err != nil {
 		return
 	}
-	fmt.Println("after disable:", info)
+	fmt.Println("after call disable:", info)
+
+	time.Sleep(time.Minute)
+
+	info, err = stream.Info()
+	if err != nil {
+		return
+	}
+	fmt.Println("after time.Minute:", info)
 }
 
 func enableStream(hub *pili.Hub, key string) {
@@ -118,7 +165,22 @@ func historyActivity(hub *pili.Hub, key string) {
 
 func savePlayback(hub *pili.Hub, key string) {
 	stream := hub.Stream(key)
-	fname, err := stream.Save(0, 0)
+	opts := &pili.SaveasOptions{
+		Format: "mp4",
+	}
+	fname, persistentID, err := stream.Saveas(opts)
+	if err != nil {
+		return
+	}
+	fmt.Println(fname, persistentID)
+}
+
+func saveSnapshot(hub *pili.Hub, key string) {
+	stream := hub.Stream(key)
+	opts := &pili.SnapshotOptions{
+		Format: "jpg",
+	}
+	fname, err := stream.Snapshot(opts)
 	if err != nil {
 		return
 	}
@@ -126,15 +188,7 @@ func savePlayback(hub *pili.Hub, key string) {
 }
 
 func main() {
-	// 检查 AccessKey、SecretKey 的配置情况.
-	if AccessKey == "" || SecretKey == "" {
-		log.Printf("WARN: AccessKey=%s SecretKey=%s\n", AccessKey, SecretKey)
-		return
-	}
 	streamKeyPrefix := "sdkexample" + strconv.FormatInt(time.Now().UnixNano(), 10)
-
-	//HubName = "PiliSDKTest"
-	//pili.APIHost = "10.200.20.28:7778"
 
 	// 初始化 client & hub.
 	mac := &pili.MAC{AccessKey: AccessKey, SecretKey: []byte(SecretKey)}
@@ -167,6 +221,12 @@ func main() {
 	fmt.Println("列出正在直播的流:")
 	listLiveStreams(hub, "carter")
 
+	fmt.Println("批量查询直播信息:")
+	batchQueryLiveStreams(hub, []string{keyA, keyB})
+
+	fmt.Println("更改流的实时转码规格:")
+	updateStreamConverts(hub, keyA)
+
 	fmt.Println("禁用流:")
 	disableStream(hub, keyA)
 
@@ -181,6 +241,9 @@ func main() {
 
 	fmt.Println("保存直播数据:")
 	savePlayback(hub, keyA)
+
+	fmt.Println("保存直播截图:")
+	saveSnapshot(hub, keyA)
 
 	fmt.Println("RTMP 推流地址:")
 	url := pili.RTMPPublishURL("publish-rtmp.test.com", HubName, keyA, mac, 3600)

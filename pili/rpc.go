@@ -70,6 +70,16 @@ func (e *Error) Error() string {
 	return e.Err
 }
 
+// DetectErrorCode 探测rpc error对应的错误码, 如果e为nil或者非rpc error返回-1.
+func DetectErrorCode(e error) int {
+	if e != nil {
+		if ee, ok := e.(*Error); ok {
+			return ee.Code
+		}
+	}
+	return -1
+}
+
 // --------------------------------------------------------------------
 
 func parseError(e *Error, r io.Reader) {
