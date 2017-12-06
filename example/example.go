@@ -4,16 +4,17 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
+	// "strconv"
 	"time"
 
-	"github.com/pili-engineering/pili-sdk-go.v2/pili"
+	"pili-sdk-go.v2/pili"
 )
 
 var (
 	AccessKey = ""            // Qiniu 账号的 AccessKey.
 	SecretKey = ""            // Qiniu 账号的 SecretKey.
 	HubName   = "PiliSDKTest" // Hub 必须事先存在.
+	OwnerId   = ""            //连麦房间所属人
 )
 
 func init() {
@@ -186,82 +187,146 @@ func saveSnapshot(hub *pili.Hub, key string) {
 	}
 	fmt.Println(fname)
 }
+func createRoom(meeting *pili.Meeting) {
+	// clien := pili.New(&pili.MAC{AccessKey, []byte(SecretKey)}, nil)
+	// meeting := clien.Meeting("123")
+	//创建房间
+	args := pili.CreateRoomArgs{
+		User:    "123",
+		Room:    "roomName",
+		UserMax: 10,
+	}
+	ret, err := meeting.RoomCreate(args)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Printf("%v\n", ret)
+}
+
+func getRoom(meeting *pili.Meeting) {
+	// clien := pili.New(&pili.MAC{AccessKey, []byte(SecretKey)}, nil)
+	// meeting := clien.Meeting("123")
+	roomName := "testRoom"
+	ret, err := meeting.RoomStatus(roomName)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Printf("%v\n", ret)
+}
+
+func deleteRoom(meeting *pili.Meeting) {
+	// clien := pili.New(&pili.MAC{AccessKey, []byte(SecretKey)}, nil)
+	// meeting := clien.Meeting("123")
+	roomName := "testRoomName"
+	ret, err := meeting.RoomDelete(roomName)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Printf("%v\n", ret)
+}
+
+func roomToken(meeting *pili.Meeting) {
+	// client := pili.New(&pili.MAC{AccessKey, []byte(SecretKey)}, nil)
+	// meeting := client.Meeting("123")
+	args := pili.RoomAccessPolicy{
+		Room:     "roomName",
+		User:     "123",
+		Perm:     "admin",
+		Version:  "2.0",
+		ExpireAt: time.Now().Add(time.Hour * 24).UnixNano(),
+	}
+	token, err := meeting.CreateToken(args)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(token)
+}
 
 func main() {
-	streamKeyPrefix := "sdkexample" + strconv.FormatInt(time.Now().UnixNano(), 10)
+	// streamKeyPrefix := "sdkexample" + strconv.FormatInt(time.Now().UnixNano(), 10)
 
-	// 初始化 client & hub.
+	// // 初始化 client & hub.
 	mac := &pili.MAC{AccessKey: AccessKey, SecretKey: []byte(SecretKey)}
 	client := pili.New(mac, nil)
-	hub := client.Hub(HubName)
+	// hub := client.Hub(HubName)
+	meeting := client.Meeting(OwnerId)
 
-	keyA := streamKeyPrefix + "A"
-	fmt.Println("获得不存在的流A:")
-	streamA := hub.Stream(keyA)
-	_, err := streamA.Info()
-	fmt.Println(err, "IsNotExists", pili.IsNotExists(err))
+	// keyA := streamKeyPrefix + "A"
+	// fmt.Println("获得不存在的流A:")
+	// streamA := hub.Stream(keyA)
+	// _, err := streamA.Info()
+	// fmt.Println(err, "IsNotExists", pili.IsNotExists(err))
 
-	fmt.Println("创建流:")
-	createStream(hub, keyA)
+	// fmt.Println("创建流:")
+	// createStream(hub, keyA)
 
-	fmt.Println("获得流:")
-	getStream(hub, keyA)
+	// fmt.Println("获得流:")
+	// getStream(hub, keyA)
 
-	fmt.Println("创建重复流:")
-	_, err = hub.Create(keyA)
-	fmt.Println(err, "IsExists", pili.IsExists(err))
+	// fmt.Println("创建重复流:")
+	// _, err = hub.Create(keyA)
+	// fmt.Println(err, "IsExists", pili.IsExists(err))
 
-	keyB := streamKeyPrefix + "B"
-	fmt.Println("创建另一路流:")
-	createStream(hub, keyB)
+	// keyB := streamKeyPrefix + "B"
+	// fmt.Println("创建另一路流:")
+	// createStream(hub, keyB)
 
-	fmt.Println("列出流:")
-	listStreams(hub, "carter")
+	// fmt.Println("列出流:")
+	// listStreams(hub, "carter")
 
-	fmt.Println("列出正在直播的流:")
-	listLiveStreams(hub, "carter")
+	// fmt.Println("列出正在直播的流:")
+	// listLiveStreams(hub, "carter")
 
-	fmt.Println("批量查询直播信息:")
-	batchQueryLiveStreams(hub, []string{keyA, keyB})
+	// fmt.Println("批量查询直播信息:")
+	// batchQueryLiveStreams(hub, []string{keyA, keyB})
 
-	fmt.Println("更改流的实时转码规格:")
-	updateStreamConverts(hub, keyA)
+	// fmt.Println("更改流的实时转码规格:")
+	// updateStreamConverts(hub, keyA)
 
-	fmt.Println("禁用流:")
-	disableStream(hub, keyA)
+	// fmt.Println("禁用流:")
+	// disableStream(hub, keyA)
 
-	fmt.Println("启用流:")
-	enableStream(hub, keyA)
+	// fmt.Println("启用流:")
+	// enableStream(hub, keyA)
 
-	fmt.Println("查询直播状态:")
-	liveStatus(hub, keyA)
+	// fmt.Println("查询直播状态:")
+	// liveStatus(hub, keyA)
 
-	fmt.Println("查询推流历史:")
-	historyActivity(hub, keyA)
+	// fmt.Println("查询推流历史:")
+	// historyActivity(hub, keyA)
 
-	fmt.Println("保存直播数据:")
-	savePlayback(hub, keyA)
+	// fmt.Println("保存直播数据:")
+	// savePlayback(hub, keyA)
 
-	fmt.Println("保存直播截图:")
-	saveSnapshot(hub, keyA)
+	// fmt.Println("保存直播截图:")
+	// saveSnapshot(hub, keyA)
 
-	fmt.Println("RTMP 推流地址:")
-	url := pili.RTMPPublishURL("publish-rtmp.test.com", HubName, keyA, mac, 3600)
-	fmt.Println(url)
+	// fmt.Println("RTMP 推流地址:")
+	// url := pili.RTMPPublishURL("publish-rtmp.test.com", HubName, keyA, mac, 3600)
+	// fmt.Println(url)
 
-	fmt.Println("RTMP 直播放址:")
-	url = pili.RTMPPlayURL("live-rtmp.test.com", HubName, keyA)
-	fmt.Println(url)
+	// fmt.Println("RTMP 直播放址:")
+	// url = pili.RTMPPlayURL("live-rtmp.test.com", HubName, keyA)
+	// fmt.Println(url)
 
-	fmt.Println("HLS 直播地址:")
-	url = pili.HLSPlayURL("live-hls.test.com", HubName, keyA)
-	fmt.Println(url)
+	// fmt.Println("HLS 直播地址:")
+	// url = pili.HLSPlayURL("live-hls.test.com", HubName, keyA)
+	// fmt.Println(url)
 
-	fmt.Println("HDL 直播地址:")
-	url = pili.HDLPlayURL("live-hdl.test.com", HubName, keyA)
-	fmt.Println(url)
+	// fmt.Println("HDL 直播地址:")
+	// url = pili.HDLPlayURL("live-hdl.test.com", HubName, keyA)
+	// fmt.Println(url)
 
-	fmt.Println("截图直播地址:")
-	url = pili.SnapshotPlayURL("live-snapshot.test.com", HubName, keyA)
-	fmt.Println(url)
+	// fmt.Println("截图直播地址:")
+	// url = pili.SnapshotPlayURL("live-snapshot.test.com", HubName, keyA)
+	// fmt.Println(url)
+
+	roomToken(meeting)
 }

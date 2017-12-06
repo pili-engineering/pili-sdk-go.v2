@@ -13,3 +13,9 @@ var APIUserAgent = fmt.Sprintf("pili-sdk-go/v2 %s %s/%s", runtime.Version(), run
 
 // APIHTTPScheme 指定了在请求 API 服务器时使用的 HTTP 模式.
 var APIHTTPScheme = "http://"
+
+//rtc API 服务器地址
+var RTCAPIHost = "rtc.qiniuapi.com"
+
+//rtc 版本
+var RTCVersion = "v2"
