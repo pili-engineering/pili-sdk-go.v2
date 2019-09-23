@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"qiniupkg.com/x/bytes.v7/seekable"
+	"github.com/qiniu/x/bytes/seekable"
 )
 
 type MAC struct {
