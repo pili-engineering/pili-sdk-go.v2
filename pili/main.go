@@ -27,6 +27,11 @@ func (c *Client) Hub(hub string) *Hub {
 	return newHub(hub, c)
 }
 
+// 初始化一个Meeting
+func (c *Client) Meeting(ownerId string) *Meeting {
+	return newMeeting(ownerId, c)
+}
+
 // RTMPPublishURL 生成 RTMP 推流地址.
 // expireAfterSeconds 表示 URL 在多久之后失效.
 func RTMPPublishURL(domain, hub, streamKey string, mac *MAC, expireAfterSeconds int64) string {
